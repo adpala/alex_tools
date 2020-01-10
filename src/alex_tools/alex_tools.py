@@ -96,7 +96,7 @@ def smarter_plot_boxes(dataset, vr, frame_numbers = None, indexes = None, ifly: 
             for part_idx in [wL_idx, wR_idx,head_idx]:
                 main_axis_x, main_axis_y = line_2pointform(myrelposes[thorax_idx,::-1],myrelposes[part_idx,::-1],box_size)
                 plt.plot(main_axis_x, main_axis_y)
-        plt.title(ff)
+        plt.title(f"frame: {ff}, index: {indexes[jj]}")
         plt.legend(extra_text)
         plt.axis('off')
         plt.show()
