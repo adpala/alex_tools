@@ -52,7 +52,7 @@ def remove_all_nans(x):
     return np.swapaxes(xx,0,-1)
 
 
-def smarter_plot_boxes(dataset, vr, frame_numbers = None, indexes = None, ifly: int = 0, box_size: int = 100, thorax_idx: int = 8, reduced_parts: bool = True):
+def smarter_plot_boxes(dataset, vr, frame_numbers = None, indexes = None, ifly: int = 0, box_size: int = 100, thorax_idx: int = 8, reduced_parts: bool = True, plot_lines: bool = True, extra_text = None, verbose:bool=False):
 
     if (frame_numbers == None) and (indexes == None): 
         print('you forgot to give frame_numbers or indexes')
@@ -61,9 +61,10 @@ def smarter_plot_boxes(dataset, vr, frame_numbers = None, indexes = None, ifly: 
         frame_numbers = index2frame_number(indexes, dataset)
     if indexes == None: 
         indexes = frame_number2index(frame_numbers, dataset)
-        
-    print(f"frame_numbers: {frame_numbers}")
-    print(f"indexes: {indexes}")
+
+    if verbose:   
+        print(f"frame_numbers: {frame_numbers}")
+        print(f"indexes: {indexes}")
     
     # video frames
     frames = list(vr[frame_numbers])
@@ -76,12 +77,78 @@ def smarter_plot_boxes(dataset, vr, frame_numbers = None, indexes = None, ifly: 
         myrelposes = myposes - myposes[thorax_idx,:] + box_size/2
         if reduced_parts:
             myrelposes = myrelposes[[0,8,9,10],:]
+            head_idx = 0
+            thorax_idx = 1
+            wL_idx = 2
+            wR_idx = 3
+        else:
+            head_idx = 0
+            thorax_idx = 8
+            wL_idx = 9
+            wR_idx = 10            
         croppedframe = crop_frame(frame=frames[jj], center=center[indexes[jj],:], box_size=np.array([box_size,box_size]), mode = 'clip')
 
         # plot
         bpcmp = cm.get_cmap('gist_rainbow', myrelposes.shape[0])
         plt.imshow(croppedframe, cmap='Greys')
         plt.scatter(myrelposes[:,1],myrelposes[:,0], c=bpcmp(range(myrelposes.shape[0])))
+        if plot_lines:
+            for part_idx in [wL_idx, wR_idx,head_idx]:
+                main_axis_x, main_axis_y = line_2pointform(myrelposes[thorax_idx,::-1],myrelposes[part_idx,::-1],box_size)
+                plt.plot(main_axis_x, main_axis_y)
         plt.title(ff)
+        plt.legend(extra_text)
         plt.axis('off')
         plt.show()
+
+def line_2pointform(p1,p2,xmax):
+    """line that passes through points p1 and p2 (which are arrays with 2 elements, [x,y]), extending to cover the x range from 0 to xmax."""
+
+    x = np.arange(xmax)
+    y = p2[1] + (x-p2[0])*(p2[1]-p1[1])/(p2[0]-p1[0])
+    inside_image = np.where((y < xmax)*(y > 0))[0]
+    x= x[inside_image]
+    y = y[inside_image]
+    return x, y
+
+
+def internal_angle(A: np.array, B: np.array, C: np.array, deg:bool=True, array_logic: str='tfc'):
+    """Calculates internal angle (∠ABC) between three points. If A,B,C are lists or arrays, calculation happens element-wise.
+    
+    Args:
+        A, B, C ([type]): position of points between which the angle is calculated.
+        deg ([type]): Return angle in degrees if True, radians if False (default).
+
+    Returns:
+        angles ([type]): internal angle between lines AB and BC.
+    """
+
+    v1s = B-A
+    v2s = C-A
+
+    # reshape vector arrays to be [time, coordinates, ...]
+    if A.ndim == 3:
+        if array_logic == 'tfc':
+            v1s = np.swapaxes(v1s,1,2)
+            v2s = np.swapaxes(v2s,1,2)
+        elif array_logic == 'ftc':
+            v1s = np.swapaxes(v1s,1,2)
+            v1s = np.swapaxes(v1s,0,2)
+            v2s = np.swapaxes(v2s,1,2)
+            v2s = np.swapaxes(v2s,0,2)
+        elif array_logic == 'fct':
+            v1s = np.swapaxes(v1s,0,2)
+            v2s = np.swapaxes(v2s,0,2)
+    elif A.ndim > 3:
+        print('Result might not be correct, only tested for arrays with 2 or 3 dimensions. Contact Adrian for help, if required.')
+
+    dot_v1_v2 = np.einsum('ij...,ij...->i...', v1s, v2s)
+    dot_v1_v1 = np.einsum('ij...,ij...->i...', v1s, v1s)
+    dot_v2_v2 = np.einsum('ij...,ij...->i...', v2s, v2s)
+
+    angles = np.arccos(dot_v1_v2/np.sqrt(dot_v1_v1*dot_v2_v2))
+
+    if deg:
+        angles *= 180/np.pi
+
+    return angles

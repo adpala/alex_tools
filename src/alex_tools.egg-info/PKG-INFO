@@ -2,10 +2,10 @@ Metadata-Version: 2.1
 Name: alex-tools
 Version: 0.1
 Summary: tools for Alex project
-Home-page: https://github.com/adpala/alex_tools
+Home-page: https://github.com/adpala/alex_tools.git
 Author: Adrian Palacios Munoz
 Author-email: adpala93@gmail.com
-License: MIT
+License: UNKNOWN
 Description: # alex_tools
         repo for Alex (rotation student Jan-Feb 2020)
         
