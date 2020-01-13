@@ -152,3 +152,18 @@ def internal_angle(A: np.array, B: np.array, C: np.array, deg:bool=True, array_l
         angles *= 180/np.pi
 
     return angles
+
+def correct_wing_angles(dataset):
+    """ Recalculates wing angles to be correct using pose information from dataset. Angle range between 0-360 degrees.
+    
+    Warning: Small angles to the opposite side will also be positive, but the are never big enough to be confused as wing-extension events,
+    therefore this won't be a problem, but for other applications this might have to be taken into account.
+    """
+    heads = dataset.pose_positions_allo[:, :, 0,:]
+    thorax = dataset.pose_positions_allo[:, :, 8,:]
+    wingL = dataset.pose_positions_allo[:, :, 9,:]
+    wingR = dataset.pose_positions_allo[:, :, 10,:]
+    left_angles = internal_angle(wingL,thorax,heads)
+    right_angles = internal_angle(wingR,thorax,heads)
+    sum_angles = left_angles + right_angles
+    return left_angles, right_angles, sum_angles
