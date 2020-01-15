@@ -167,3 +167,15 @@ def correct_wing_angles(dataset):
     right_angles = internal_angle(wingR,thorax,heads)
     sum_angles = left_angles + right_angles
     return left_angles, right_angles, sum_angles
+
+def alex_rotate_points(x, y, degrees, origin=(0, 0)):
+    """Rotate (x,y) a point around a given point given by origin."""
+    radians = degrees / 180 * np.pi
+    offset_x, offset_y = origin
+    adjusted_x = (x - offset_x)
+    adjusted_y = (y - offset_y)
+    cos_rad = np.cos(radians)
+    sin_rad = np.sin(radians)
+    qx = offset_x + cos_rad * adjusted_x + sin_rad * adjusted_y
+    qy = offset_y + -sin_rad * adjusted_x + cos_rad * adjusted_y
+    return qx, qy
